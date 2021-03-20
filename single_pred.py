@@ -1,5 +1,9 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # DIsable all the TensorFlow Extra Debug Notification.
+'''
+The code allow the user to test single features vector in the validation dataset
+It takes as input the row of the features vector of interest in the validation dataset
+It returns the analyzed vector and plots the corresponding plot
+'''
+
 
 import sys
 import pandas as pd
@@ -12,22 +16,25 @@ import keras.utils
 import innvestigate
 import innvestigate.utils as iutils
 
-
+# Get the csv file and load it as pandas data frame
 def get_data(val_data_path):
     val = pd.read_csv(val_data_path)
 
-    return train, val
+    return val
 
+# The pandas data frame for validation is splitted in "data" and "ground truth"
+# moreover the csv head is removed. The data are scaled between 0 and 1.
 def get_combined_data(val_data_path):
 
     val = pd.read_csv(val_data_path)
-    # The Ground truth of both validation dataset is dropped
+
+    # The Ground truth of validation dataset is dropped
     # and stored in the variable valGT
 
     valGT = val.Class
     val.drop(['Class'], axis=1, inplace=True)
 
-    # data vector for train and validation  are scaled between 0 and 1
+    # Data vector for train and validation  are scaled between 0 and 1
     # and structured as Pandas Data Frame
 
     val = val.values  # returns a numpy array
@@ -38,7 +45,7 @@ def get_combined_data(val_data_path):
     return val, valGT
 
 # The dataset (both val and test) are preprocessed and
-val, valGT = get_combined_data('baseline2.csv')
+val, valGT = get_combined_data('myval.csv')
 
 if len(sys.argv)==2:
     row_num = int(sys.argv[1])
@@ -52,15 +59,17 @@ else:
     sys.exit(1)
 
 model = keras.models.load_model("model_cc")
+
 # Stripping the softmax activation from the model
 model_wo_sm = iutils.keras.graph.model_wo_softmax(model)
+
 # Creating an analyzer
 gradient_analyzer = innvestigate.analyzer.Gradient(model_wo_sm)
+
 # Applying the analyzer
 analysis = gradient_analyzer.analyze(val.loc[[row_num]])
 
 print(analysis)
 plt.plot(analysis[0])
 plt.show()
-#plt.savefig("baseline2.png")
 
